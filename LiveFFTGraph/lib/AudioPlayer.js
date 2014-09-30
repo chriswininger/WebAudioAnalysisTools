@@ -2,17 +2,12 @@ var $ = require('jquery'),
 	toastr = require('toastr'),
 	_ = require('underscore');
 
-function AudioPlayer(playButtonID) {
+function AudioPlayer(playButtonID, audioContext, destination) {
 	this.playButtonID = playButtonID;
-
 	console.log('Initializing audio');
 	toastr.info('Initializing audio');
-
-	this.ctx = new AudioContext();
-	this.mainVol = this.ctx.createGain();
-	this.mainVol.gain.value = 0.95;
-	this.mainVol.connect(this.ctx.destination);
-
+	this.ctx = audioContext;
+	this.destination = destination;
 	this.wireEvents();
 }
 
@@ -50,7 +45,7 @@ _.extend(AudioPlayer.prototype, {
 		var src = this.ctx.createBufferSource();
 		src.buffer = this.buffer;
 		src.playbackRate = 1.0;
-		src.connect(this.mainVol);
+		src.connect(this.destination);
 		src.start(0);
 		toastr.info('Complete!!!');
 	}

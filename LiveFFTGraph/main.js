@@ -8,12 +8,6 @@ for (var i = 0; i < numLines; i++) {
 	lines.push(new smoothie.TimeSeries());
 }
 
-setInterval(function() {
-	for (var i = 0; i < numLines; i++) {
-		lines[i].append(new Date().getTime(), 1000*i + (Math.random() * 1000));
-	}
-}, 500);
-
 function createTimeline() {
 	var chart = new smoothie.SmoothieChart();
 	for (var i = 0; i < numLines; i++) {
@@ -23,7 +17,33 @@ function createTimeline() {
 }
 
 $(function() {
-	var audioPlayer = new AudioPlayer('btnPlay');
+	var ctx = new AudioContext();
+
+	var mainVol = ctx.createGain();
+	mainVol.gain.value = 0.95;
+
+	var analyser = ctx.createAnalyser();
+	analyser.fftSize = 2048;
+	var bufferLength = analyser.frequencyBinCount;
+	var dataArray = new Uint8Array(bufferLength);
+	analyser.getByteTimeDomainData(dataArray);
+
+
+	analyser.connect(mainVol);
+	mainVol.connect(ctx.destination);
+
+
+	var audioPlayer = new AudioPlayer('btnPlay', ctx, analyser);
+
+	setInterval(function() {
+		analyser.getByteTimeDomainData(dataArray);
+
+		for (var i = 0; i < numLines; i++) {
+			lines[i].append(new Date().getTime(), 100*i + dataArray[i*100]);
+		}
+	}, 500);
+
+
 	createTimeline();
 });
 
