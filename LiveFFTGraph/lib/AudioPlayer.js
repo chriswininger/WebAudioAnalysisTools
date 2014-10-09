@@ -2,47 +2,35 @@ var $ = require('jquery'),
 	toastr = require('toastr'),
 	_ = require('underscore');
 
-function AudioPlayer(playButtonID, audioContext, destination) {
-	this.playButtonID = playButtonID;
+function AudioPlayer(audioContext, destination) {
 	console.log('Initializing audio');
 	toastr.info('Initializing audio');
 	this.ctx = audioContext;
 	this.destination = destination;
-	this.wireEvents();
 }
 
 _.extend(AudioPlayer.prototype, {
-	wireEvents: function () {
-		var self = this;
-		$('#' + this.playButtonID).click(function(){
-			console.log('loading');
+	loadFile: function (file) {
+        var self = this;
+        var reader = new FileReader();
 
-			try {
-				toastr.info('loading file');
-				self.loadFile();
-			} catch (ex){
-				console.error('failed to load ' + ex);
-				toastr.error('Load File Error: ' + ex.message);
-			}
-		});
-	},
-	loadFile: function () {
-		var self = this;
-		var req = new XMLHttpRequest();
-		req.open("GET", "BumpinTheTeaParty.mp3", true);
-		req.responseType = 'arraybuffer';
-		req.onload = function() {
-			self.ctx.decodeAudioData(req.response, function(buffer){
-				toastr.info('decode audio: ' + buffer.length + ', ' + buffer.duration);
-				self.buffer = buffer;
-				self.playBuffer();
-			});
-		};
-		req.send();
+        toastr.info('loading file');
+        reader.onload = (function(loadedFile) {
+            return function(e) {
+                self.ctx.decodeAudioData(e.target.result, function(buffer) {
+                    self.buffer = buffer;
+                    self.playBuffer();
+                });
+            };
+        })(file);
+
+        // Read the file
+        reader.readAsArrayBuffer(file);
 	},
 	playBuffer: function () {
 		toastr.info('Play it');
 		var src = this.ctx.createBufferSource();
+        console.log('!!! buffer: ' + JSON.stringify(this.buffer));
 		src.buffer = this.buffer;
 		src.playbackRate = 1.0;
 		src.connect(this.destination);
